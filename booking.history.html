@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Booking History | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.bookings-loading { text-align:center; padding:40px; color:#7f7469; }
+.bookings-empty { text-align:center; padding:40px; color:#7f7469; }
+</style>
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="vehicle-listing.html">Vehicles</a></li>
+        <li><a href="dashboard.html">Dashboard</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="backend/logout.php">Logout</a>
+    </div>
+</header>
+<main class="page-shell">
+    <h1 class="page-title">Booking History</h1>
+    <p class="page-lead">A clean overview of your RentKaro trips.</p>
+    <div class="panel" style="margin-bottom:18px">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Filter by Status</label>
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Booking ID</th>
+                    <th>Vehicle</th>
+                    <th>Location</th>
+                    <th>Dates</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+                <tr><td colspan="7" class="bookings-loading">Loading bookings...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script>
+async function loadBookings() {
+    const status = document.getElementById("statusFilter").value;
+    const tbody = document.getElementById("bookingsTableBody");
+    tbody.innerHTML = '<tr><td colspan="7" class="bookings-loading">Loading bookings...</td></tr>';
+
+    try {
+        let url = "./backend/get-bookings.php";
+        if (status) url += "?status=" + encodeURIComponent(status);
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            displayBookings(result.bookings);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">Failed to load bookings. Please log in again.</td></tr>';
+        }
+    } catch (error) {
+        console.error("Error loading bookings:", error);
+        tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">Unable to connect to server.</td></tr>';
+    }
+}
+
+function displayBookings(bookings) {
+    const tbody = document.getElementById("bookingsTableBody");
+
+    if (!bookings || bookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">No bookings found.</td></tr>';
+        return;
+    }
+
+    let html = "";
+    bookings.forEach(booking => {
+        const statusClass = getStatusClass(booking.booking_status);
+        const statusLabel = getStatusLabel(booking.booking_status);
+        const actionHtml = getActionHtml(booking);
+
+        html += `
+            <tr>
+                <td>#${booking.booking_code}</td>
+                <td>${booking.vehicle_name}</td>
+                <td>${booking.pickup_location} → ${booking.dropoff_location}</td>
+                <td>${formatDate(booking.pickup_date)} – ${formatDate(booking.return_date)}</td>
+                <td>₹${Number(booking.rental_cost).toLocaleString("en-IN")}</td>
+                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                <td>${actionHtml}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function getStatusClass(status) {
+    switch(status) {
+        case "confirmed": return "success";
+        case "completed": return "success";
+        case "cancelled": return "danger";
+        case "active": return "success";
+        case "pending": return "";
+        default: return "";
+    }
+}
+
+function getStatusLabel(status) {
+    switch(status) {
+        case "confirmed": return "Confirmed";
+        case "completed": return "Completed";
+        case "cancelled": return "Cancelled";
+        case "active": return "Active";
+        case "pending": return "Pending";
+        default: return status;
+    }
+}
+
+function getActionHtml(booking) {
+    const status = booking.booking_status;
+
+    if (status === "pending" || status === "confirmed") {
+        return `<button class="table-action delete-action" onclick="cancelBooking(${booking.booking_id})">Cancel</button>`;
+    }
+    return "";
+}
+
+async function cancelBooking(bookingId) {
+    if (!confirm("Are you sure you want to cancel this booking?")) return;
+
+    const response = await fetch("./backend/cancel-booking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ booking_id: bookingId })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+        alert("Booking cancelled successfully.");
+        loadBookings();
+    } else {
+        alert("Failed to cancel booking: " + result.message);
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+// Event listeners
+document.getElementById("statusFilter").addEventListener("change", loadBookings);
+
+// Load bookings when page opens
+loadBookings();
+</script>
+<script src="js/nav-auth.js" data-root=""></script>
+</body>
+</html>

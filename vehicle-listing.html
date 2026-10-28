@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Vehicles | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.vehicles-loading {
+    text-align: center;
+    padding: 40px;
+    font-size: 14px;
+    color: #7f7469;
+}
+.vehicle-empty {
+    text-align: center;
+    padding: 40px;
+    color: #7f7469;
+}
+</style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="logo" href="index.html">
+        <i class="logo-mark"></i>Rent<span>Karo</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a class="active" href="vehicle-listing.html">Vehicles</a></li>
+        <li><a href="index.html#how">How It Works</a></li>
+        <li><a href="index.html#offers">Offers</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="login.html">Log In</a>
+        <a class="signup-btn" href="signup.html">Sign Up</a>
+    </div>
+</header>
+
+<main class="page-shell">
+    <h1 class="page-title">Explore Our Vehicles</h1>
+    <p class="page-lead">Choose from premium sedans, hatchbacks, SUVs, bikes and scooters.</p>
+
+    <div class="panel" style="margin-bottom:18px">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Search</label>
+                <input id="searchInput" placeholder="Search by vehicle name">
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <select id="categorySelect">
+                    <option value="">All Vehicles</option>
+                    <option value="Sedan">Sedan</option>
+                    <option value="Hatchback">Hatchback</option>
+                    <option value="SUV">SUV</option>
+                    <option value="Bike">Bike</option>
+                    <option value="Scooter">Scooter</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Location</label>
+                <select id="locationSelect">
+                    <option value="">All Locations</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Pune">Pune</option>
+                    <option value="Goa">Goa</option>
+                </select>
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end">
+                <button id="searchVehiclesBtn" class="primary-btn" style="width:100%">Search</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="vehiclesContainer" class="featured-grid">
+        <div class="vehicles-loading">Loading vehicles...</div>
+    </div>
+</main>
+
+<script>
+let allVehicles = [];
+
+async function loadVehicles() {
+    const vehiclesContainer = document.getElementById("vehiclesContainer");
+    vehiclesContainer.innerHTML = '<div class="vehicles-loading">Loading vehicles...</div>';
+
+    try {
+        const params = new URLSearchParams();
+        const search = document.getElementById("searchInput").value.trim();
+        const category = document.getElementById("categorySelect").value;
+        const location = document.getElementById("locationSelect").value;
+
+        if (search) params.set("search", search);
+        if (category) params.set("category", category);
+        if (location) params.set("status", location);
+
+        const response = await fetch("./backend/get-vehicles.php?" + params.toString());
+        const result = await response.json();
+
+        if (result.success) {
+            allVehicles = result.vehicles;
+            displayVehicles(result.vehicles);
+        } else {
+            vehiclesContainer.innerHTML = '<div class="vehicle-empty">Failed to load vehicles.</div>';
+        }
+    } catch (error) {
+        console.error("Error loading vehicles:", error);
+        vehiclesContainer.innerHTML = '<div class="vehicle-empty">Unable to connect to server.</div>';
+    }
+}
+
+function displayVehicles(vehicles) {
+    const vehiclesContainer = document.getElementById("vehiclesContainer");
+
+    if (!vehicles || vehicles.length === 0) {
+        vehiclesContainer.innerHTML = '<div class="vehicle-empty">No vehicles found matching your criteria.</div>';
+        return;
+    }
+
+    let html = "";
+    vehicles.forEach(vehicle => {
+        html += `
+        <article class="vehicle-card">
+            <div class="vehicle-image-wrap">
+                <img src="${vehicle.image}" alt="${vehicle.vehicle_name}">
+                <span class="fav">♡</span>
+            </div>
+            <div class="vehicle-body">
+                <div class="vehicle-top">
+                    <h3 class="vehicle-name">${vehicle.vehicle_name}</h3>
+                    <span class="vehicle-tag">${vehicle.vehicle_type}</span>
+                </div>
+                <div class="vehicle-meta">
+                    <span>♙ ${vehicle.seats} Seats</span>
+                    <span>${vehicle.transmission}</span>
+                    <span>◉ ${vehicle.fuel_type}</span>
+                </div>
+                <div class="vehicle-bottom">
+                    <div class="vehicle-price">₹${Number(vehicle.price_per_day).toLocaleString("en-IN")} <span>/ day</span></div>
+                    <a class="small-btn" href="booking.html?vehicle_id=${vehicle.vehicle_id}">Book</a>
+                </div>
+            </div>
+        </article>
+        `;
+    });
+    vehiclesContainer.innerHTML = html;
+}
+
+// Event listeners
+document.getElementById("searchVehiclesBtn").addEventListener("click", loadVehicles);
+document.getElementById("searchInput").addEventListener("keypress", function(e) {
+    if (e.key === "Enter") loadVehicles();
+});
+document.getElementById("categorySelect").addEventListener("change", loadVehicles);
+document.getElementById("locationSelect").addEventListener("change", loadVehicles);
+
+// Initial load
+loadVehicles();
+</script>
+<script src="js/nav-auth.js" data-root=""></script>
+
+</body>
+</html>

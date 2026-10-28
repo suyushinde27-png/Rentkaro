@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking | RentKaro</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+
+        <a class="logo" href="index.html">
+            <i class="logo-mark"></i>Rent<span>Karo</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="vehicle-listing.html">Vehicles</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <a class="login-btn" href="login.html">Sign In</a>
+        </div>
+
+    </header>
+
+
+    <main class="page-shell">
+
+        <div class="panel" style="max-width:700px;margin:auto">
+
+            <h1 class="page-title">Complete Your Booking</h1>
+
+            <p class="page-lead">
+                Enter your trip details and confirm your vehicle.
+            </p>
+
+
+            <div class="notice">
+                Selected vehicle:
+                <strong id="vehicleName">Loading...</strong>
+                · ₹<span id="vehiclePrice">0</span>/day
+            </div>
+
+
+            <form onsubmit="event.preventDefault(); continueToPayment()">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Pick-up Date</label>
+                        <input type="date" id="pickupDate" required>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Return Date</label>
+                        <input type="date" id="returnDate" required>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Pick-up Location</label>
+
+                        <input
+                            type="text"
+                            id="pickupLocation"
+                            required
+                            placeholder="Mumbai">
+
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Drop-off Location</label>
+
+                        <input
+                            type="text"
+                            id="dropoffLocation"
+                            required
+                            placeholder="Mumbai">
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-actions">
+
+                    <button class="primary-btn" type="submit">
+                        Continue to Payment →
+                    </button>
+
+                    <a class="secondary-btn" href="vehicle-listing.html">
+                        Back
+                    </a>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const vehicleName = document.getElementById("vehicleName");
+        const vehiclePrice = document.getElementById("vehiclePrice");
+
+
+        async function loadVehicle() {
+
+            // Get vehicle_id from the URL
+            const params = new URLSearchParams(window.location.search);
+            const vehicleId = params.get("vehicle_id");
+
+
+            // If no vehicle ID was provided
+            if (!vehicleId) {
+
+                vehicleName.textContent = "No vehicle selected";
+                vehiclePrice.textContent = "0";
+
+                return;
+            }
+
+
+            try {
+
+                // Get vehicle information from PHP
+                const response = await fetch(
+                    `./backend/getvehicle.php?vehicle_id=${encodeURIComponent(vehicleId)}`,
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+
+                const responseText = await response.text();
+
+
+                let result;
+
+                try {
+
+                    result = JSON.parse(responseText);
+
+                } catch (error) {
+
+                    throw new Error(
+                        "The server did not return valid JSON."
+                    );
+
+                }
+
+
+                // Check PHP response
+                if (!response.ok || result.success !== true) {
+
+                    throw new Error(
+                        result.message || "Vehicle not found."
+                    );
+
+                }
+
+
+                const vehicle = result.vehicle;
+
+
+                // Display vehicle information
+                vehicleName.textContent = vehicle.vehicle_name;
+
+                vehiclePrice.textContent = Number(
+                    vehicle.price_per_day
+                ).toLocaleString("en-IN");
+
+
+                // Save selected vehicle
+                sessionStorage.setItem(
+                    "selectedVehicle",
+                    JSON.stringify(vehicle)
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "Vehicle loading error:",
+                    error
+                );
+
+                vehicleName.textContent =
+                    "Unable to load vehicle";
+
+                vehiclePrice.textContent = "0";
+
+            }
+
+        }
+
+
+        function continueToPayment() {
+
+            const params =
+                new URLSearchParams(window.location.search);
+
+            const vehicleId =
+                params.get("vehicle_id");
+
+
+            // Get booking form values
+            const pickupDate =
+                document.getElementById("pickupDate").value;
+
+            const returnDate =
+                document.getElementById("returnDate").value;
+
+            const pickupLocation =
+                document.getElementById("pickupLocation").value;
+
+            const dropoffLocation =
+                document.getElementById("dropoffLocation").value;
+
+
+            // Save booking details temporarily
+            const bookingDetails = {
+
+                vehicle_id: vehicleId,
+
+                pickup_date: pickupDate,
+
+                return_date: returnDate,
+
+                pickup_location: pickupLocation,
+
+                dropoff_location: dropoffLocation
+
+            };
+
+
+            sessionStorage.setItem(
+                "bookingDetails",
+                JSON.stringify(bookingDetails)
+            );
+
+
+            // Go to payment page
+            window.location.href =
+                `payment.html?vehicle_id=${encodeURIComponent(vehicleId)}`;
+
+        }
+
+
+        // Load vehicle when page opens
+        loadVehicle();
+
+    </script>
+    <script src="js/nav-auth.js" data-root=""></script>
+
+</body>
+
+</html>

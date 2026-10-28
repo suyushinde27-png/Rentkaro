@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RentKaro | Premium Vehicle Rentals</title>
+<link rel="stylesheet" href="css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<header class="navbar">
+  <a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+  <ul class="nav-links">
+    <li><a class="active" href="index.html">Home</a></li>
+    <li><a href="vehicle-listing.html">Vehicles</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#why">About Us</a></li>
+    <li><a href="#footer">Contact</a></li>
+  </ul>
+  <div class="nav-actions">
+    <a class="nav-link-btn" href="booking.history.html"><span class="heart">♡</span> Wishlist</a>
+    <a class="login-btn" href="login.html">♙ &nbsp;Log In</a>
+    <a class="signup-btn" href="signup.html">Sign Up</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-content">
+    <h1>Rent Your Ride,<br>Explore with <span>Freedom</span></h1>
+    <p>Choose from a wide range of cars and bikes.<br>Affordable prices. Easy booking. Memorable journeys.</p>
+    <a href="vehicle-listing.html" class="hero-btn">Explore Vehicles →</a>
+  </div>
+</section>
+
+<section class="search-section">
+  <div class="search-box">
+    <div class="search-item"><label>Location</label><input id="pickupLocation" type="text" placeholder="Enter pickup location"></div>
+    <div class="search-item"><label>Pick-up Date</label><input id="pickupDate" type="date"></div>
+    <div class="search-item"><label>Return Date</label><input id="returnDate" type="date"></div>
+    <div class="search-item">
+      <label>Vehicle Type</label>
+      <select id="vehicleType">
+        <option value="all">All Vehicles</option>
+        <option value="sedan">Sedan</option>
+        <option value="hatchback">Hatchback</option>
+        <option value="suv">SUV</option>
+        <option value="bike">Bike</option>
+        <option value="scooter">Scooter</option>
+      </select>
+    </div>
+    <button class="search-btn" onclick="searchVehicle()">Search Vehicles</button>
+  </div>
+</section>
+
+<section class="section" id="vehicles">
+  <div class="section-head"><div><h2 class="section-title">Browse by Category</h2></div><a class="view-all" href="vehicle-listing.html">View All →</a></div>
+  <div class="category-grid">
+    <a class="category-card active" href="vehicle-listing.html?type=all"><div class="category-icon">▣</div><h3>All Vehicles</h3><small>150+ options</small></a>
+    <a class="category-card" href="vehicle-listing.html?type=sedan"><div class="category-icon">▱</div><h3>Sedan</h3><small>Premium comfort</small></a>
+    <a class="category-card" href="vehicle-listing.html?type=hatchback"><div class="category-icon">▰</div><h3>Hatchback</h3><small>City friendly</small></a>
+    <a class="category-card" href="vehicle-listing.html?type=suv"><div class="category-icon">▰</div><h3>SUV</h3><small>More space</small></a>
+    <a class="category-card" href="vehicle-listing.html?type=bike"><div class="category-icon">♢</div><h3>Bike</h3><small>Quick &amp; fun</small></a>
+    <a class="category-card" href="vehicle-listing.html?type=scooter"><div class="category-icon">◉</div><h3>Scooter</h3><small>Easy rides</small></a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><h2 class="section-title">Featured Vehicles</h2><p class="section-subtitle">Handpicked rides for your next journey.</p></div><a class="view-all" href="vehicle-listing.html">View All Vehicles →</a></div>
+  <div class="featured-grid">
+    <article class="vehicle-card">
+      <div class="vehicle-image-wrap"><img src="images/car.jpg" alt="Maruti Swift"><span class="fav">♡</span></div>
+      <div class="vehicle-body"><div class="vehicle-top"><h3 class="vehicle-name">Maruti Swift</h3><span class="vehicle-tag">Hatchback</span></div><div class="vehicle-meta"><span>♙ 4 Seats</span><span>⚙ Manual</span><span>◉ Petrol</span></div><div class="vehicle-bottom"><div class="vehicle-price">₹1,199 <span>/ day</span></div><a class="small-btn" href="booking.html?vehicle_id=1">View Details</a></div></div>
+    </article>
+    <article class="vehicle-card">
+      <div class="vehicle-image-wrap"><img src="images/car.jpg" alt="Honda City"><span class="fav">♡</span></div>
+      <div class="vehicle-body"><div class="vehicle-top"><h3 class="vehicle-name">Honda City</h3><span class="vehicle-tag">Sedan</span></div><div class="vehicle-meta"><span>♙ 5 Seats</span><span>⚙ Automatic</span><span>◉ Petrol</span></div><div class="vehicle-bottom"><div class="vehicle-price">₹1,799 <span>/ day</span></div><a class="small-btn" href="booking.html?vehicle_id=2">View Details</a></div></div>
+    </article>
+    <article class="vehicle-card">
+      <div class="vehicle-image-wrap"><img src="images/suv.jpg" alt="Hyundai Creta"><span class="fav">♡</span></div>
+      <div class="vehicle-body"><div class="vehicle-top"><h3 class="vehicle-name">Hyundai Creta</h3><span class="vehicle-tag">SUV</span></div><div class="vehicle-meta"><span>♙ 5 Seats</span><span>⚙ Automatic</span><span>◉ Diesel</span></div><div class="vehicle-bottom"><div class="vehicle-price">₹2,299 <span>/ day</span></div><a class="small-btn" href="booking.html?vehicle_id=3">View Details</a></div></div>
+    </article>
+    <article class="vehicle-card">
+      <div class="vehicle-image-wrap"><img src="images/bike.jpg" alt="KTM Duke 390"><span class="fav">♡</span></div>
+      <div class="vehicle-body"><div class="vehicle-top"><h3 class="vehicle-name">KTM Duke 390</h3><span class="vehicle-tag">Bike</span></div><div class="vehicle-meta"><span>♙ 2 Seats</span><span>⚙ Manual</span><span>◉ Petrol</span></div><div class="vehicle-bottom"><div class="vehicle-price">₹999 <span>/ day</span></div><a class="small-btn" href="booking.html?vehicle_id=4">View Details</a></div></div>
+    </article>
+  </div>
+</section>
+
+<section class="section why-section" id="why">
+  <div class="section-head"><div><h2 class="section-title">Why Choose RentKaro?</h2></div></div>
+  <div class="why-grid">
+    <div class="why-card"><div class="why-icon">▣</div><div><h3>Wide Range of Vehicles</h3><p>Cars, bikes, scooters — all in one place. Sedan, Hatchbacks, SUV, everything you desire</p></div></div>
+    <div class="why-card"><div class="why-icon">₹</div><div><h3>Affordable Prices</h3><p>Best prices with no hidden charges. Pay what you see</p></div></div>
+    <div class="why-card"><div class="why-icon">▦</div><div><h3>Easy Booking</h3><p>Quick and simple booking in just steps.Juat find, choose, book. </p></div></div>
+    <div class="why-card"><div class="why-icon">♧</div><div><h3>24/7 Support</h3><p>We're here to help you, anytime, anywhere.</p></div></div>
+  </div>
+</section>
+
+<section class="section testimonials" id="reviews">
+  <div class="section-head"><div><h2 class="section-title">What Our Customers Say</h2><p class="section-subtitle">Real experiences from people who chose RentKaro.</p></div><a class="view-all" href="#">View All →</a></div>
+  <div class="review-grid">
+    <article class="review-card"><div class="reviewer"><div class="avatar">RV</div><div><strong>Rohan Verma</strong><div class="stars">★★★★★</div></div></div><p>"Amazing experience! The car was in perfect condition and the booking process was super easy."</p></article>
+    <article class="review-card"><div class="reviewer"><div class="avatar">PS</div><div><strong>Priya Sharma</strong><div class="stars">★★★★★</div></div></div><p>"Best rental service I've used. Affordable prices and excellent customer support."</p></article>
+    <article class="review-card"><div class="reviewer"><div class="avatar">AM</div><div><strong>Arjun Mehta</strong><div class="stars">★★★★★</div></div></div><p>"Wide range of vehicles and very transparent pricing. Highly recommended!"</p></article>
+  </div>
+</section>
+
+
+<section class="section" id="how">
+  <div class="section-head"><div><h2 class="section-title">How It Works?</h2><p class="section-subtitle">Four simple steps to get moving.</p></div></div>
+  <div class="steps">
+    <div class="step"><div class="step-icon">⌕</div><h3>1. Search</h3><p>Choose your location, dates &amp; vehicle.</p></div>
+    <div class="step"><div class="step-icon">▦</div><h3>2. Select</h3><p>Pick the perfect ride for your journey.</p></div>
+    <div class="step"><div class="step-icon">▤</div><h3>3. Book</h3><p>Enter your details and confirm booking.</p></div>
+    <div class="step"><div class="step-icon">♢</div><h3>4. Drive</h3><p>Enjoy your ride and make memories.</p></div>
+  </div>
+</section>
+
+
+
+<footer class="footer" id="footer">
+  <div class="footer-grid">
+    <div><h3 class="brand">RentKaro</h3><p>Your journey, our mission.<br>Rent the best vehicles and<br>explore the world your way.</p><div class="socials"><span class="social">f</span><span class="social">◎</span><span class="social">♥</span><span class="social">in</span></div></div>
+    <div><h3>Company</h3><a href="#why">About Us</a><a href="#how">How It Works</a><a href="#">Terms &amp; Conditions</a><a href="#">Privacy Policy</a></div>
+    <div><h3>Support</h3><a href="#">Help Center</a><a href="#">Cancellation Policy</a><a href="#">Payment Options</a><a href="#">FAQs</a></div>
+    <div><h3>Top Cities</h3><a href="#locations">Mumbai</a><a href="#locations">Pune</a><a href="#locations">Goa</a><a href="#locations">Bangalore</a><a href="#locations">Delhi</a></div>
+    <div><h3>Contact Us</h3><p>☎ &nbsp;+91 9152945008</p><p>✉ &nbsp;suyushinde27@gmail.com</p><p>⌖ &nbsp;Mumbai, India</p></div>
+  </div>
+  <div class="footer-bottom">© 2026 RentKaro. All rights reserved.</div>
+</footer>
+
+<script src="js/script.js"></script>
+<script src="js/nav-auth.js" data-root=""></script>
+</body>
+</html>

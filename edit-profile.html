@@ -1,0 +1,114 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Edit Profile | RentKaro</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<header class="navbar">
+		<a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+		<ul class="nav-links">
+			<li><a href="index.html">Home</a></li>
+			<li><a href="vehicle-listing.html">Vehicles</a></li>
+			<li><a class="active" href="dashboard.html">Dashboard</a></li>
+		</ul>
+		<div class="nav-actions">
+			<a class="login-btn" href="backend/logout.php">Logout</a>
+		</div>
+	</header>
+	<main class="page-shell profile-shell">
+		<div class="panel profile-panel">
+			<h1 class="page-title">Edit Profile</h1>
+			<p class="page-lead">Keep your RentKaro account details up to date.</p>
+			<form id="profileForm">
+				<div class="form-grid">
+					<div class="form-group"><label>Name</label><input id="edit-name" required></div>
+					<div class="form-group"><label>Email</label><input id="edit-email" type="email" required></div>
+					<div class="form-group"><label>Phone</label><input id="edit-phone" required></div>
+					<div class="form-group"><label>City</label><input id="edit-city"></div>
+				</div>
+				<div class="form-actions"><button class="primary-btn" type="submit">Save Changes</button><a class="secondary-btn" href="dashboard.html">Cancel</a></div>
+			</form>
+		</div>
+	</main>
+	<script>
+async function loadUserProfile() {
+	try {
+		const response = await fetch("./backend/session.php", {
+			credentials: "same-origin"
+		});
+		const result = await response.json();
+
+		if (!result.success) {
+			window.location.href = "login.html";
+			return;
+		}
+
+		document.getElementById("edit-name").value = result.name || "";
+		document.getElementById("edit-email").value = result.email || "";
+		document.getElementById("edit-phone").value = result.mobile || "";
+		document.getElementById("edit-city").value = result.city || "";
+	} catch (error) {
+		console.error("Error loading profile:", error);
+		alert("Unable to load profile. Please log in again.");
+		window.location.href = "login.html";
+	}
+}
+
+document.getElementById("profileForm").addEventListener("submit", async function(e) {
+	e.preventDefault();
+
+	const name = document.getElementById("edit-name").value.trim();
+	const email = document.getElementById("edit-email").value.trim();
+	const phone = document.getElementById("edit-phone").value.trim();
+	const city = document.getElementById("edit-city").value.trim();
+
+	if (!name || !email || !phone) {
+		alert("Please fill in all required fields.");
+		return;
+	}
+
+	if (!/^\d{10}$/.test(phone)) {
+		alert("Please enter a valid 10-digit mobile number.");
+		return;
+	}
+
+	if (!email.includes("@")) {
+		alert("Please enter a valid email address.");
+		return;
+	}
+
+	try {
+		const response = await fetch("./backend/update-profile.php", {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: new URLSearchParams({
+				name: name,
+				email: email,
+				mobile: phone,
+				city: city
+			})
+		});
+
+		const result = await response.json();
+
+		if (result.success) {
+			alert("Profile updated successfully!");
+			window.location.href = "dashboard.html";
+		} else {
+			alert("Failed to update profile: " + result.message);
+		}
+	} catch (error) {
+		console.error("Error updating profile:", error);
+		alert("Unable to connect to server.");
+	}
+});
+
+// Load profile data when page opens
+loadUserProfile();
+	</script>
+<script src="js/nav-auth.js" data-root=""></script>
+</body>
+</html>

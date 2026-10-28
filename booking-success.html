@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Booking Confirmed | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Confetti Canvas */
+#confettiCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+}
+
+/* Boarding Pass / Rental Voucher */
+.ticket-container {
+    max-width: 580px;
+    margin: 20px auto;
+    background: #ffffff;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15);
+    border: 1px solid rgba(118,85,59,0.2);
+    text-align: left;
+    color: #1a202c;
+    position: relative;
+}
+
+.ticket-header {
+    background: linear-gradient(135deg, #171d1e 0%, #20292a 100%);
+    color: #ffffff;
+    padding: 24px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #c9a46a;
+}
+.ticket-brand {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+.ticket-brand span { color: #ead3a5; }
+.ticket-status-badge {
+    background: rgba(72, 187, 120, 0.2);
+    color: #48bb78;
+    border: 1px solid #48bb78;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.ticket-body {
+    padding: 24px 28px;
+}
+
+.ticket-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-bottom: 20px;
+}
+.ticket-cell small {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #718096;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.ticket-cell strong {
+    font-size: 14px;
+    color: #1a202c;
+}
+
+.ticket-divider {
+    position: relative;
+    border-top: 2px dashed #cbd5e1;
+    margin: 20px 0;
+}
+.ticket-divider::before, .ticket-divider::after {
+    content: "";
+    position: absolute;
+    top: -12px;
+    width: 24px;
+    height: 24px;
+    background: var(--cream);
+    border-radius: 50%;
+}
+.ticket-divider::before { left: -40px; }
+.ticket-divider::after { right: -40px; }
+
+.ticket-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    padding: 18px 28px;
+    border-top: 1px solid #e2e8f0;
+}
+.barcode {
+    font-family: monospace;
+    letter-spacing: 4px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #475569;
+}
+.total-paid-tag {
+    text-align: right;
+}
+.total-paid-tag small {
+    font-size: 10px;
+    color: #64748b;
+    display: block;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.total-paid-tag strong {
+    font-size: 20px;
+    color: #2b6cb0;
+}
+
+.success-check-bubble {
+    width: 76px;
+    height: 76px;
+    border-radius: 50%;
+    background: #dceadf;
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 16px;
+    box-shadow: 0 8px 24px rgba(46, 125, 50, 0.2);
+    animation: bounceIn 0.5s ease-out;
+}
+@keyframes bounceIn {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@media print {
+    .navbar, .action-buttons-wrap, #confettiCanvas { display: none !important; }
+    body { background: white !important; }
+    .ticket-container { box-shadow: none; border: 1px solid #000; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="confettiCanvas"></canvas>
+
+<header class="navbar">
+    <a class="logo" href="index.html">
+        <i class="logo-mark"></i>Rent<span>Karo</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="vehicle-listing.html">Vehicles</a></li>
+        <li><a href="booking.history.html">Booking History</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="dashboard.html">Dashboard</a>
+    </div>
+</header>
+
+<main class="page-shell" style="text-align:center;">
+    <div class="container">
+        <div class="success-check-bubble">✓</div>
+        <h1 style="font-size:30px; font-weight:700; color:var(--espresso); margin-bottom:6px;">Booking Confirmed!</h1>
+        <p style="color:#6e4b30; font-size:14px; max-width:500px; margin:0 auto 10px;">
+            Your payment was processed successfully. Here is your official rental pass.
+        </p>
+
+        <!-- Digital Rental Voucher -->
+        <div class="ticket-container" id="voucherCard">
+            <div class="ticket-header">
+                <div>
+                    <div class="ticket-brand">Rent<span>Karo</span> Pass</div>
+                    <div style="font-size:11px; opacity:0.8; margin-top:2px;">Official Vehicle Rental Pass</div>
+                </div>
+                <div class="ticket-status-badge">● Confirmed</div>
+            </div>
+
+            <div class="ticket-body">
+                <div class="ticket-grid">
+                    <div class="ticket-cell">
+                        <small>Vehicle Reserved</small>
+                        <strong id="recVehicleName">Maruti Swift</strong>
+                    </div>
+                    <div class="ticket-cell">
+                        <small>Booking Reference</small>
+                        <strong id="recBookingCode" style="color:#2b6cb0;">#RK72DADB</strong>
+                    </div>
+                    <div class="ticket-cell">
+                        <small>Pickup Date</small>
+                        <strong id="recPickup">16 Sep 2026</strong>
+                    </div>
+                    <div class="ticket-cell">
+                        <small>Return Date</small>
+                        <strong id="recReturn">18 Sep 2026</strong>
+                    </div>
+                    <div class="ticket-cell">
+                        <small>Pickup Route</small>
+                        <strong id="recRoute">Mumbai → Mumbai</strong>
+                    </div>
+                    <div class="ticket-cell">
+                        <small>Reward Points</small>
+                        <strong style="color:#2e7d32;" id="recPoints">+35 pts earned</strong>
+                    </div>
+                </div>
+
+                <div class="ticket-divider"></div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#64748b;">
+                    <span>Transaction ID: <code id="recTxnId" style="color:#1a202c; font-weight:600;">TXN82390</code></span>
+                    <span>Payment Mode: <strong>UPI (Verified)</strong></span>
+                </div>
+            </div>
+
+            <div class="ticket-footer">
+                <div class="barcode">||| | |||| | || |||| |</div>
+                <div class="total-paid-tag">
+                    <small>Total Amount Paid</small>
+                    <strong id="recAmount">₹2,398</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-buttons-wrap" style="display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap;">
+            <button class="primary-btn" onclick="window.print()" style="background:#20292a; color:#f8f6ef;">🖨️ Print / Save Voucher</button>
+            <a class="signup-btn" href="booking.history.html">View My Bookings</a>
+            <a class="secondary-btn" href="dashboard.html">Go to Dashboard</a>
+        </div>
+    </div>
+</main>
+
+<script>
+// Confetti Animation Effect
+(function() {
+    const canvas = document.getElementById("confettiCanvas");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    });
+
+    const particles = [];
+    const colors = ["#c9a46a", "#3182ce", "#48bb78", "#e53e3e", "#ecc94b", "#9f7aea"];
+
+    for (let i = 0; i < 90; i++) {
+        particles.push({
+            x: width * 0.5,
+            y: height * 0.3,
+            vx: (Math.random() - 0.5) * 16,
+            vy: (Math.random() - 0.7) * 18,
+            size: Math.random() * 8 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 10,
+            gravity: 0.35,
+            drag: 0.98,
+            alpha: 1
+        });
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, width, height);
+        let alive = false;
+
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity;
+            p.vx *= p.drag;
+            p.vy *= p.drag;
+            p.rotation += p.rotationSpeed;
+            if (p.vy > 0) p.alpha -= 0.007;
+
+            if (p.alpha > 0) {
+                alive = true;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                ctx.restore();
+            }
+        });
+
+        if (alive) requestAnimationFrame(render);
+        else ctx.clearRect(0, 0, width, height);
+    }
+    render();
+})();
+
+// Populate Receipt Details
+const rawReceipt = sessionStorage.getItem("lastBookingReceipt");
+if (rawReceipt) {
+    try {
+        const receipt = JSON.parse(rawReceipt);
+        document.getElementById("recBookingCode").textContent = "#" + receipt.booking_code;
+        document.getElementById("recTxnId").textContent = receipt.transaction_id;
+        document.getElementById("recVehicleName").textContent = receipt.vehicle_name;
+        document.getElementById("recPickup").textContent = receipt.pickup_date;
+        document.getElementById("recReturn").textContent = receipt.return_date;
+        document.getElementById("recRoute").textContent = (receipt.pickup_location || "City") + " → " + (receipt.dropoff_location || "City");
+        document.getElementById("recPoints").textContent = "+" + receipt.reward_points + " pts earned";
+        document.getElementById("recAmount").textContent = "₹" + Number(receipt.amount_paid).toLocaleString("en-IN");
+    } catch (e) {
+        console.error(e);
+    }
+}
+</script>
+
+</body>
+</html>

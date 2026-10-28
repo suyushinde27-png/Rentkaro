@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Dashboard | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+    <ul class="nav-links">
+        <li><a class="active" href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="manage-vehicles.html">Vehicles</a></li>
+        <li><a href="manage-bookings.html">Bookings</a></li>
+        <li><a href="manage-users.html">Users</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="admin/logout.php">Logout</a>
+        <a class="login-btn" href="index.html">Website</a>
+    </div>
+</header>
+<main class="page-shell">
+    <h1 class="page-title">Admin Dashboard</h1>
+    <p class="page-lead">Monitor RentKaro operations at a glance.</p>
+
+    <div id="statsContainer" class="stat-grid">
+        <div class="stat">
+            <small>Total Vehicles</small>
+            <h2 id="totalVehicles">0</h2>
+        </div>
+        <div class="stat">
+            <small>Active Bookings</small>
+            <h2 id="activeBookings">0</h2>
+        </div>
+        <div class="stat">
+            <small>Registered Users</small>
+            <h2 id="totalUsers">0</h2>
+        </div>
+        <div class="stat">
+            <small>Monthly Revenue</small>
+            <h2 id="monthlyRevenue">₹0</h2>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Quick Management</h2>
+        <div class="form-actions">
+            <a class="primary-btn" href="manage-vehicles.html">Manage Vehicles</a>
+            <a class="secondary-btn" href="manage-bookings.html">Manage Bookings</a>
+            <a class="secondary-btn" href="manage-users.html">Manage Users</a>
+        </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px">
+        <h2>Statistics</h2>
+        <dl style="font-size:11px;color:#c4b8ac">
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line-light)">
+                <dt>Vehicles Available</dt>
+                <dd id="statsAvailable">0</dd>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line-light)">
+                <dt>Vehicles Booked</dt>
+                <dd id="statsBooked">0</dd>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line-light)">
+                <dt>Vehicles in Maintenance</dt>
+                <dd id="statsMaintenance">0</dd>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:7px 0">
+                <dt>Pending Payments</dt>
+                <dd id="statsPending">0</dd>
+            </div>
+        </dl>
+    </div>
+</main>
+<script>
+async function loadAdminDashboard() {
+    try {
+        const response = await fetch("./admin/session.php", {
+            credentials: "same-origin"
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            window.location.href = "admin-login.html";
+            return;
+        }
+
+        const stats = result.stats || {};
+
+        // Update main stats
+        document.getElementById("totalVehicles").textContent = stats.total_vehicles || 0;
+        document.getElementById("activeBookings").textContent = stats.active_bookings || 0;
+        document.getElementById("totalUsers").textContent = stats.total_users || 0;
+        document.getElementById("monthlyRevenue").textContent = "₹" + Math.floor(stats.monthly_revenue || 0).toLocaleString("en-IN");
+
+        // Update detailed stats
+        document.getElementById("statsAvailable").textContent = stats.vehicles_available || 0;
+        document.getElementById("statsBooked").textContent = stats.vehicles_booked || 0;
+        document.getElementById("statsMaintenance").textContent = stats.vehicles_maintenance || 0;
+
+        // Calculate pending payments from bookings
+        document.getElementById("statsPending").textContent = stats.active_bookings || 0;
+
+    } catch (error) {
+        console.error("Error loading dashboard:", error);
+        alert("Unable to load dashboard. Please log in again.");
+        window.location.href = "admin-login.html";
+    }
+}
+
+// Load dashboard on page load
+loadAdminDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | RentKaro</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+
+        <a class="logo" href="index.html">
+            <i class="logo-mark"></i>Rent<span>Karo</span>
+        </a>
+
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="vehicle-listing.html">Vehicles</a></li>
+            <li><a class="active" href="dashboard.html">Dashboard</a></li>
+        </ul>
+
+        <div class="nav-actions">
+            <a class="login-btn" href="backend/logout.php">Logout</a>
+        </div>
+
+    </header>
+
+
+    <main class="page-shell">
+
+        <h1 class="page-title">My Dashboard</h1>
+
+        <p class="page-lead">
+            Welcome, <span id="userName">User</span>. Manage your rentals, profile and booking history.
+        </p>
+
+
+        <div class="stat-grid">
+
+            <div class="stat">
+                <small>Active Bookings</small>
+                <h2 id="activeBookings">0</h2>
+            </div>
+
+            <div class="stat">
+                <small>Total Trips</small>
+                <h2 id="totalTrips">0</h2>
+            </div>
+
+            <div class="stat">
+                <small>Saved Vehicles</small>
+                <h2 id="savedVehicles">0</h2>
+            </div>
+
+            <div class="stat">
+                <small>Reward Points</small>
+                <h2 id="rewardPoints">0</h2>
+            </div>
+
+        </div>
+
+
+        <div class="card-grid">
+
+            <div class="simple-card">
+                <h3>Current Booking</h3>
+
+                <p id="currentBooking">No current bookings.</p>
+
+                <div class="form-actions">
+                    <a class="small-btn" href="booking.history.html">
+                        View Booking
+                    </a>
+                </div>
+            </div>
+
+
+            <div class="simple-card">
+                <h3>Profile</h3>
+
+                <p>
+                    Update your personal information and contact details.
+                </p>
+
+                <div class="form-actions">
+                    <a class="small-btn" href="edit-profile.html">
+                        Edit Profile
+                    </a>
+                </div>
+            </div>
+
+
+            <div class="simple-card">
+                <h3>Booking History</h3>
+
+                <p>
+                    View all completed and cancelled rental bookings.
+                </p>
+
+                <div class="form-actions">
+                    <a class="small-btn" href="booking.history.html">
+                        View History
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        async function loadUser() {
+
+            try {
+
+                const response = await fetch("backend/session.php", {
+                    credentials: "same-origin"
+                });
+
+                const result = await response.json();
+
+
+                if (!result.success) {
+
+                    window.location.href = "login.html";
+
+                    return;
+                }
+
+
+                document.getElementById("userName").textContent = result.name || "User";
+                document.getElementById("activeBookings").textContent = result.active_bookings || 0;
+                document.getElementById("totalTrips").textContent = result.total_trips || 0;
+                document.getElementById("savedVehicles").textContent = result.saved_vehicles || 0;
+                document.getElementById("rewardPoints").textContent = result.reward_points || 0;
+
+                if (result.current_booking) {
+                    const booking = result.current_booking;
+                    document.getElementById("currentBooking").textContent =
+                        `${booking.vehicle_name} · ${booking.pickup_location} · ${booking.pickup_date} – ${booking.return_date}`;
+                }
+
+
+            } catch (error) {
+
+                console.error(error);
+
+            }
+
+        }
+
+
+        loadUser();
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Payment Gateway | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* Razorpay Modal Styling & Animations */
+.rzp-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 16, 0.82);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeIn 0.25s ease-out;
+}
+.rzp-modal {
+    background: #ffffff;
+    color: #1a202c;
+    width: min(480px, 95%);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,255,255,0.1);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transform: scale(0.95);
+    animation: scaleUp 0.25s ease-out forwards;
+    position: relative;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleUp { to { transform: scale(1); } }
+
+.rzp-header {
+    background: linear-gradient(135deg, #071e3d 0%, #1a365d 100%);
+    color: #ffffff;
+    padding: 22px 24px;
+    position: relative;
+    border-bottom: 2px solid #3182ce;
+}
+.rzp-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.rzp-brand-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+}
+.rzp-brand-badge .dot {
+    width: 8px;
+    height: 8px;
+    background: #48bb78;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #48bb78;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+
+.rzp-close {
+    background: rgba(255,255,255,0.12);
+    border: none;
+    color: #ffffff;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+.rzp-close:hover { background: rgba(255,255,255,0.25); transform: rotate(90deg); }
+
+.rzp-amount-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 14px;
+}
+.rzp-amount-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #90cdf4; font-weight: 600; }
+.rzp-amount-val { font-size: 26px; font-weight: 800; color: #ffffff; }
+
+.rzp-body {
+    padding: 20px 24px;
+    background: #f8fafc;
+}
+
+/* Method Tabs */
+.rzp-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin-bottom: 18px;
+    background: #e2e8f0;
+    padding: 4px;
+    border-radius: 12px;
+}
+.rzp-tab {
+    padding: 10px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+.rzp-tab.active {
+    background: #ffffff;
+    color: #0f2b48;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.rzp-pane { display: none; }
+.rzp-pane.active { display: block; animation: fadeIn 0.25s; }
+
+/* QR Scanner Animation */
+.qr-wrap {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+}
+.qr-box {
+    width: 145px;
+    height: 145px;
+    margin: 0 auto 10px;
+    position: relative;
+    background: #ffffff;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+.qr-box svg { width: 100%; height: 100%; display: block; }
+.qr-laser {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3182ce, #63b3ed, transparent);
+    box-shadow: 0 0 10px #3182ce;
+    top: 8px;
+    animation: laserScan 2.4s ease-in-out infinite;
+    pointer-events: none;
+    border-radius: 2px;
+}
+@keyframes laserScan {
+    0%, 100% { top: 8px; opacity: 0.2; }
+    50% { top: 130px; opacity: 1; }
+}
+
+.upi-apps-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0 14px;
+}
+.upi-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #4a5568;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.upi-badge:hover, .upi-badge.active {
+    border-color: #3182ce;
+    background: #ebf8ff;
+    color: #2b6cb0;
+}
+
+/* Interactive Card Preview */
+.interactive-card {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+.interactive-card::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(201, 164, 106, 0.25) 0%, transparent 70%);
+    pointer-events: none;
+}
+.card-chip {
+    width: 34px;
+    height: 24px;
+    background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+    border-radius: 5px;
+    margin-bottom: 14px;
+    border: 1px solid #94a3b8;
+}
+.card-num-preview {
+    font-size: 16px;
+    letter-spacing: 2px;
+    font-family: monospace;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #f1f5f9;
+}
+.card-bottom-preview {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+.card-bottom-preview strong {
+    display: block;
+    color: #ffffff;
+    font-size: 12px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.rzp-input-group { margin-bottom: 12px; }
+.rzp-input-group label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: #4a5568;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+.rzp-input {
+    width: 100%;
+    height: 40px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 13px;
+    color: #1e293b;
+    background: #ffffff;
+    outline: none;
+    transition: 0.2s;
+}
+.rzp-input:focus {
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.15);
+}
+.rzp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Bank Grid */
+.bank-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+.bank-item {
+    border: 1.5px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 9px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.bank-item:hover, .bank-item.active {
+    border-color: #3182ce;
+    background: #ebf8ff;
+    color: #1e40af;
+    transform: translateY(-2px);
+}
+
+.rzp-pay-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2b6cb0 0%, #1a4971 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.25s;
+    box-shadow: 0 4px 16px rgba(43, 108, 176, 0.35);
+    margin-top: 8px;
+}
+.rzp-pay-btn:hover { background: linear-gradient(135deg, #235891 0%, #153655 100%); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(43, 108, 176, 0.45); }
+
+.quick-scan-btn {
+    width: 100%;
+    background: #e6fffa;
+    border: 1px dashed #38b2ac;
+    color: #234e52;
+    padding: 7px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.quick-scan-btn:hover { background: #b2f5ea; }
+
+.rzp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+.rzp-badge { color: #071e3d; font-weight: 700; }
+
+/* Processing state */
+.rzp-processing {
+    display: none;
+    text-align: center;
+    padding: 40px 15px;
+}
+.rzp-spinner {
+    width: 52px;
+    height: 52px;
+    border: 4px solid #e2e8f0;
+    border-top-color: #3182ce;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.rzp-success-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #38a169;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    margin: 0 auto 18px;
+    animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes bounceIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+</style>
+</head>
+<body>
+
+<header class="navbar">
+    <a class="logo" href="index.html">
+        <i class="logo-mark"></i>Rent<span>Karo</span>
+    </a>
+    <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a class="active" href="vehicle-listing.html">Vehicles</a></li>
+        <li><a href="booking.history.html">My Bookings</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="dashboard.html">Dashboard</a>
+    </div>
+</header>
+
+<main class="page-shell">
+    <div class="checkout-layout">
+        <section class="panel checkout-panel">
+            <h1 class="page-title">Complete Payment</h1>
+            <p class="page-lead">Select your preferred payment method to secure your booking.</p>
+            <div class="notice" id="paymentNotice">Your booking is almost ready. Review the rental cost and proceed to checkout.</div>
+
+            <div id="paymentFormContainer" style="display:none">
+                <form id="paymentForm">
+                    <fieldset class="payment-methods">
+                        <legend>Payment Channels</legend>
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="upi" checked required>
+                            <span><strong>Instant UPI / QR Code</strong><small>Pay instantly with Google Pay, PhonePe, Paytm or BHIM</small></span><b>⚡</b>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="card">
+                            <span><strong>Credit / Debit Card</strong><small>Visa, Mastercard, RuPay, Diners & Amex accepted</small></span><b>💳</b>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment_method" value="cash">
+                            <span><strong>Pay at Pickup</strong><small>Pay on spot with cash or card when collecting vehicle</small></span><b>📍</b>
+                        </label>
+                    </fieldset>
+                    <div class="form-actions">
+                        <button class="primary-btn" type="submit" id="openGatewayBtn">Proceed to Pay →</button>
+                        <a class="secondary-btn" href="booking.html">Back to Trip Details</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <aside class="panel order-summary">
+            <div class="summary-heading"><h2>Booking Summary</h2><span>01</span></div>
+            <div class="summary-vehicle" id="summaryVehicle">
+                <div><strong>Loading vehicle...</strong><small></small></div>
+                <span></span>
+            </div>
+            <dl id="summaryDetails">
+                <div><dt>Rental Duration</dt><dd id="summaryDays">-</dd></div>
+                <div><dt>Vehicle Base Rent</dt><dd id="summaryRental">-</dd></div>
+                <div><dt>Taxes & Fees (18% GST)</dt><dd id="summaryTaxes">-</dd></div>
+            </dl>
+            <div class="summary-total">
+                <span>Total Amount</span>
+                <strong id="summaryTotal">-</strong>
+            </div>
+            <p class="secure-note">🔒 Guaranteed 256-bit Encrypted Checkout with Instant Verification.</p>
+        </aside>
+    </div>
+</main>
+
+<!-- Interactive Razorpay Themed Gateway Modal -->
+<div class="rzp-backdrop" id="rzpModal">
+    <div class="rzp-modal">
+        <div class="rzp-header">
+            <div class="rzp-header-top">
+                <div class="rzp-brand-badge">
+                    <span class="dot"></span> RentKaro Gateway
+                </div>
+                <button class="rzp-close" type="button" onclick="closeGateway()" title="Close modal">✕</button>
+            </div>
+            <div class="rzp-amount-row">
+                <div>
+                    <div class="rzp-amount-label">Amount Payable</div>
+                    <div class="rzp-amount-val" id="modalAmount">₹0</div>
+                </div>
+                <div style="font-size:11px; opacity:0.85; text-align:right;">
+                    Vehicle Reservation<br><strong id="modalVehicleName" style="color:#ffffff;">Car</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gateway Content -->
+        <div class="rzp-body" id="gatewayMainContent">
+            <div class="rzp-tabs">
+                <button type="button" class="rzp-tab active" onclick="switchTab('upi')">📱 UPI / QR</button>
+                <button type="button" class="rzp-tab" onclick="switchTab('card')">💳 Card</button>
+                <button type="button" class="rzp-tab" onclick="switchTab('netbanking')">🏦 NetBanking</button>
+            </div>
+
+            <!-- UPI Tab -->
+            <div class="rzp-pane active" id="pane-upi">
+                <div class="qr-wrap">
+                    <div class="qr-box">
+                        <div class="qr-laser"></div>
+                        <svg viewBox="0 0 100 100" fill="#0c2340">
+                            <rect x="10" y="10" width="24" height="24" rx="3" fill="none" stroke="#0c2340" stroke-width="4"/>
+                            <rect x="16" y="16" width="12" height="12" fill="#0c2340"/>
+                            <rect x="66" y="10" width="24" height="24" rx="3" fill="none" stroke="#0c2340" stroke-width="4"/>
+                            <rect x="72" y="16" width="12" height="12" fill="#0c2340"/>
+                            <rect x="10" y="66" width="24" height="24" rx="3" fill="none" stroke="#0c2340" stroke-width="4"/>
+                            <rect x="16" y="72" width="12" height="12" fill="#0c2340"/>
+                            <rect x="42" y="12" width="6" height="6"/>
+                            <rect x="52" y="18" width="6" height="6"/>
+                            <rect x="42" y="28" width="6" height="6"/>
+                            <rect x="12" y="44" width="6" height="6"/>
+                            <rect x="24" y="48" width="6" height="6"/>
+                            <rect x="44" y="44" width="12" height="12"/>
+                            <rect x="66" y="44" width="6" height="6"/>
+                            <rect x="78" y="50" width="8" height="8"/>
+                            <rect x="44" y="66" width="6" height="6"/>
+                            <rect x="56" y="74" width="6" height="6"/>
+                            <rect x="68" y="68" width="14" height="14"/>
+                        </svg>
+                    </div>
+                    <div style="font-size:11px; font-weight:600; color:#4a5568;">Scan QR with any UPI App</div>
+                    <div class="upi-apps-row">
+                        <span class="upi-badge active" onclick="setUpiApp('gpay')">Google Pay</span>
+                        <span class="upi-badge" onclick="setUpiApp('phonepe')">PhonePe</span>
+                        <span class="upi-badge" onclick="setUpiApp('paytm')">Paytm</span>
+                        <span class="upi-badge" onclick="setUpiApp('bhim')">BHIM</span>
+                    </div>
+                    <button type="button" class="quick-scan-btn" onclick="executePayment()">⚡ Click to Simulate Instant App Scan & Pay</button>
+                </div>
+
+                <div class="rzp-input-group">
+                    <label>Or Pay via UPI ID / VPA</label>
+                    <input type="text" class="rzp-input" id="upiInput" placeholder="suyash@oksbi / @paytm" value="suyash@okhdfcbank">
+                </div>
+            </div>
+
+            <!-- Card Tab -->
+            <div class="rzp-pane" id="pane-card">
+                <!-- Visual Card Component -->
+                <div class="interactive-card">
+                    <div class="card-chip"></div>
+                    <div class="card-num-preview" id="cardDisplayNum">4532 •••• •••• 8892</div>
+                    <div class="card-bottom-preview">
+                        <div>Cardholder<strong id="cardDisplayName">Suyash Shinde</strong></div>
+                        <div>Expires<strong id="cardDisplayExp">08/29</strong></div>
+                    </div>
+                </div>
+
+                <div class="rzp-input-group">
+                    <label>Card Number</label>
+                    <input type="text" class="rzp-input" id="cardInput" placeholder="4532 0000 0000 8892" maxlength="19" value="4532 8192 3456 8892" oninput="updateCardPreview()">
+                </div>
+                <div class="rzp-row">
+                    <div class="rzp-input-group">
+                        <label>Expiry Date</label>
+                        <input type="text" class="rzp-input" id="expInput" placeholder="MM/YY" maxlength="5" value="08/29" oninput="updateCardPreview()">
+                    </div>
+                    <div class="rzp-input-group">
+                        <label>CVV / CVC</label>
+                        <input type="password" class="rzp-input" placeholder="•••" maxlength="4" value="789">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Netbanking Tab -->
+            <div class="rzp-pane" id="pane-netbanking">
+                <label style="font-size:11px; font-weight:600; color:#4a5568; margin-bottom:8px; display:block; text-transform:uppercase;">Select Bank</label>
+                <div class="bank-grid">
+                    <div class="bank-item active" onclick="selectBank(this)">🏦 HDFC Bank</div>
+                    <div class="bank-item" onclick="selectBank(this)">🏦 SBI</div>
+                    <div class="bank-item" onclick="selectBank(this)">🏦 ICICI Bank</div>
+                    <div class="bank-item" onclick="selectBank(this)">🏦 Axis Bank</div>
+                    <div class="bank-item" onclick="selectBank(this)">🏦 Kotak</div>
+                    <div class="bank-item" onclick="selectBank(this)">🏦 PNB</div>
+                </div>
+                <p style="font-size:11px; color:#64748b; margin-top:8px;">Fast-track 1-click authentication enabled for top banking partners.</p>
+            </div>
+
+            <button type="button" class="rzp-pay-btn" id="confirmPaymentBtn" onclick="executePayment()">
+                <span>Pay <strong id="btnPayAmount">₹0</strong></span> ➔
+            </button>
+
+            <div class="rzp-footer">
+                Secured by <span class="rzp-badge">Razorpay</span> 🛡️ ISO 27001 & PCI-DSS
+            </div>
+        </div>
+
+        <!-- Processing State -->
+        <div class="rzp-body rzp-processing" id="gatewayProcessing">
+            <div id="processingSpinner">
+                <div class="rzp-spinner"></div>
+                <h3 style="font-size:17px; font-weight:700; margin-bottom:6px; color:#0f2b48;">Connecting to Gateway...</h3>
+                <p style="font-size:12px; color:#64748b;">Authorizing transaction with bank server.</p>
+            </div>
+            <div id="processingSuccess" style="display:none;">
+                <div class="rzp-success-icon">✓</div>
+                <h3 style="font-size:19px; font-weight:700; color:#2e7d32; margin-bottom:6px;">Payment Successful!</h3>
+                <p style="font-size:12px; color:#64748b;">Generating digital rental voucher...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let vehicle = null;
+let bookingDetails = null;
+let totalCost = 0;
+
+// Web Audio synthesizer for pleasant success chime
+function playSuccessChime() {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const now = ctx.currentTime;
+
+        const osc1 = ctx.createOscillator();
+        const gain1 = ctx.createGain();
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(587.33, now); // D5
+        osc1.frequency.setValueAtTime(880, now + 0.12); // A5
+        gain1.gain.setValueAtTime(0.2, now);
+        gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        osc1.connect(gain1);
+        gain1.connect(ctx.destination);
+        osc1.start(now);
+        osc1.stop(now + 0.6);
+    } catch(e) {}
+}
+
+async function loadBookingData() {
+    const params = new URLSearchParams(window.location.search);
+    const vehicleId = params.get("vehicle_id");
+
+    if (!vehicleId) {
+        document.getElementById("paymentNotice").textContent = "No vehicle selected. Please return to vehicle listing.";
+        document.getElementById("paymentNotice").style.background = "#f2ddd8";
+        document.getElementById("paymentNotice").style.color = "#8d4e42";
+        return;
+    }
+
+    const storedBooking = sessionStorage.getItem("bookingDetails");
+    if (!storedBooking) {
+        document.getElementById("paymentNotice").textContent = "Booking details not found. Please complete the booking form first.";
+        document.getElementById("paymentNotice").style.background = "#f2ddd8";
+        document.getElementById("paymentNotice").style.color = "#8d4e42";
+        return;
+    }
+
+    bookingDetails = JSON.parse(storedBooking);
+
+    try {
+        const vehicleResponse = await fetch(`./backend/getvehicle.php?vehicle_id=${encodeURIComponent(vehicleId)}`);
+        const vehicleResult = await vehicleResponse.json();
+
+        if (vehicleResult.success) {
+            vehicle = vehicleResult.vehicle;
+            updateSummary();
+        } else {
+            document.getElementById("paymentNotice").textContent = "Vehicle not found: " + vehicleResult.message;
+            document.getElementById("paymentNotice").style.background = "#f2ddd8";
+            document.getElementById("paymentNotice").style.color = "#8d4e42";
+        }
+    } catch (error) {
+        console.error("Error loading booking data:", error);
+        document.getElementById("paymentNotice").textContent = "Unable to load booking information.";
+        document.getElementById("paymentNotice").style.background = "#f2ddd8";
+        document.getElementById("paymentNotice").style.color = "#8d4e42";
+    }
+}
+
+function updateSummary() {
+    if (!vehicle || !bookingDetails) return;
+
+    const pickup = new Date(bookingDetails.pickup_date);
+    const returnDate = new Date(bookingDetails.return_date);
+    let days = Math.ceil((returnDate - pickup) / (1000 * 60 * 60 * 24));
+    if (days < 1) days = 1;
+
+    const rentalCost = days * vehicle.price_per_day;
+    const taxes = rentalCost * 0.18;
+    totalCost = Math.floor(rentalCost + taxes);
+
+    document.getElementById("summaryVehicle").innerHTML = `
+        <div><strong>${vehicle.vehicle_name}</strong><small>${vehicle.vehicle_type} · ${vehicle.transmission}</small></div>
+        <span>₹${Number(vehicle.price_per_day).toLocaleString("en-IN")}/day</span>
+    `;
+    document.getElementById("summaryDays").textContent = `${days} day${days > 1 ? 's' : ''}`;
+    document.getElementById("summaryRental").textContent = `₹${Math.floor(rentalCost).toLocaleString("en-IN")}`;
+    document.getElementById("summaryTaxes").textContent = `₹${Math.floor(taxes).toLocaleString("en-IN")} (18% GST)`;
+    document.getElementById("summaryTotal").textContent = `₹${totalCost.toLocaleString("en-IN")}`;
+
+    document.getElementById("modalAmount").textContent = `₹${totalCost.toLocaleString("en-IN")}`;
+    document.getElementById("btnPayAmount").textContent = `₹${totalCost.toLocaleString("en-IN")}`;
+    document.getElementById("modalVehicleName").textContent = vehicle.vehicle_name;
+
+    document.getElementById("paymentFormContainer").style.display = "block";
+}
+
+function switchTab(tabName) {
+    document.querySelectorAll(".rzp-tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".rzp-pane").forEach(p => p.classList.remove("active"));
+
+    if (tabName === 'upi') {
+        document.querySelector(".rzp-tabs button:nth-child(1)").classList.add("active");
+        document.getElementById("pane-upi").classList.add("active");
+    } else if (tabName === 'card') {
+        document.querySelector(".rzp-tabs button:nth-child(2)").classList.add("active");
+        document.getElementById("pane-card").classList.add("active");
+    } else if (tabName === 'netbanking') {
+        document.querySelector(".rzp-tabs button:nth-child(3)").classList.add("active");
+        document.getElementById("pane-netbanking").classList.add("active");
+    }
+}
+
+function setUpiApp(app) {
+    document.querySelectorAll(".upi-badge").forEach(b => b.classList.remove("active"));
+    event.target.classList.add("active");
+    document.getElementById("upiInput").value = "suyash@" + app;
+}
+
+function selectBank(element) {
+    document.querySelectorAll(".bank-item").forEach(b => b.classList.remove("active"));
+    element.classList.add("active");
+}
+
+function updateCardPreview() {
+    const cardVal = document.getElementById("cardInput").value || "4532 •••• •••• 8892";
+    const expVal = document.getElementById("expInput").value || "MM/YY";
+    document.getElementById("cardDisplayNum").textContent = cardVal;
+    document.getElementById("cardDisplayExp").textContent = expVal;
+}
+
+function openGateway() {
+    document.getElementById("rzpModal").style.display = "flex";
+}
+
+function closeGateway() {
+    document.getElementById("rzpModal").style.display = "none";
+}
+
+document.getElementById("paymentForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    const method = document.querySelector('input[name="payment_method"]:checked')?.value;
+    if (method === 'card') switchTab('card');
+    else switchTab('upi');
+    openGateway();
+});
+
+async function executePayment() {
+    const confirmBtn = document.getElementById("confirmPaymentBtn");
+    confirmBtn.disabled = true;
+
+    const mainContent = document.getElementById("gatewayMainContent");
+    const processingOverlay = document.getElementById("gatewayProcessing");
+    const spinner = document.getElementById("processingSpinner");
+    const successBox = document.getElementById("processingSuccess");
+
+    mainContent.style.display = "none";
+    processingOverlay.style.display = "block";
+
+    const params = new URLSearchParams(window.location.search);
+    const vehicleId = params.get("vehicle_id");
+    const paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value || "upi";
+
+    try {
+        // Step 1: Create booking
+        const bookingResponse = await fetch("./backend/create-booking.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                vehicle_id: vehicleId,
+                pickup_date: bookingDetails.pickup_date,
+                return_date: bookingDetails.return_date,
+                pickup_location: bookingDetails.pickup_location,
+                dropoff_location: bookingDetails.dropoff_location
+            })
+        });
+
+        const bookingResult = await bookingResponse.json();
+
+        if (!bookingResult.success) {
+            alert(bookingResult.message);
+            closeGateway();
+            mainContent.style.display = "block";
+            processingOverlay.style.display = "none";
+            confirmBtn.disabled = false;
+            return;
+        }
+
+        const bookingId = bookingResult.booking_id;
+
+        // Step 2: Process payment
+        const paymentResponse = await fetch("./backend/process-payment.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                booking_id: bookingId,
+                payment_method: paymentMethod
+            })
+        });
+
+        const paymentResult = await paymentResponse.json();
+
+        if (paymentResult.success) {
+            sessionStorage.setItem("lastBookingReceipt", JSON.stringify({
+                booking_code: paymentResult.booking_code,
+                transaction_id: paymentResult.transaction_id,
+                vehicle_name: bookingResult.vehicle_name,
+                amount_paid: paymentResult.amount_paid,
+                reward_points: paymentResult.reward_points_earned,
+                pickup_date: bookingResult.pickup_date,
+                return_date: bookingResult.return_date,
+                pickup_location: bookingDetails.pickup_location,
+                dropoff_location: bookingDetails.dropoff_location
+            }));
+
+            // Play celebratory audio chime
+            playSuccessChime();
+
+            setTimeout(() => {
+                spinner.style.display = "none";
+                successBox.style.display = "block";
+
+                setTimeout(() => {
+                    sessionStorage.removeItem("bookingDetails");
+                    window.location.href = "booking-success.html";
+                }, 1300);
+            }, 1100);
+
+        } else {
+            alert("Payment failed: " + paymentResult.message);
+            closeGateway();
+            mainContent.style.display = "block";
+            processingOverlay.style.display = "none";
+            confirmBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("Payment error:", error);
+        alert("An error occurred during payment processing.");
+        closeGateway();
+        mainContent.style.display = "block";
+        processingOverlay.style.display = "none";
+        confirmBtn.disabled = false;
+    }
+}
+
+// Start
+loadBookingData();
+</script>
+<script src="js/nav-auth.js" data-root=""></script>
+
+</body>
+</html>

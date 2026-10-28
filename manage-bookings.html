@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Manage Bookings | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.bookings-loading { text-align:center; padding:40px; color:#7f7469; }
+</style>
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+    <ul class="nav-links">
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="manage-vehicles.html">Vehicles</a></li>
+        <li><a class="active" href="manage-bookings.html">Bookings</a></li>
+        <li><a href="manage-users.html">Users</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="index.html">Website</a>
+    </div>
+</header>
+<main class="page-shell">
+    <h1 class="page-title">Manage Bookings</h1>
+    <p class="page-lead">Review current, completed and cancelled reservations.</p>
+    <div class="panel" style="margin-bottom:18px">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Filter by Status</label>
+                <select id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Booking</th>
+                    <th>Customer</th>
+                    <th>Vehicle</th>
+                    <th>Dates</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookingsTableBody">
+                <tr><td colspan="7" class="bookings-loading">Loading bookings...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script>
+async function loadBookings() {
+    const status = document.getElementById("statusFilter").value;
+    const tbody = document.getElementById("bookingsTableBody");
+    tbody.innerHTML = '<tr><td colspan="7" class="bookings-loading">Loading bookings...</td></tr>';
+
+    let url = "./admin/get-bookings.php";
+    if (status) url += "?status=" + encodeURIComponent(status);
+
+    try {
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            displayBookings(result.bookings);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">Failed to load bookings.</td></tr>';
+        }
+    } catch (error) {
+        console.error("Error loading bookings:", error);
+        tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">Unable to connect to server.</td></tr>';
+    }
+}
+
+function displayBookings(bookings) {
+    const tbody = document.getElementById("bookingsTableBody");
+
+    if (!bookings || bookings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="bookings-empty">No bookings found.</td></tr>';
+        return;
+    }
+
+    let html = "";
+    bookings.forEach(booking => {
+        const statusClass = getStatusClass(booking.booking_status);
+        const statusLabel = getStatusLabel(booking.booking_status);
+        const actionHtml = getActionHtml(booking.booking_id, booking.booking_status);
+
+        html += `
+            <tr>
+                <td>#${booking.booking_code}</td>
+                <td>${booking.customer_name}</td>
+                <td>${booking.vehicle_name}</td>
+                <td>${formatDate(booking.pickup_date)} – ${formatDate(booking.return_date)}</td>
+                <td>₹${Number(booking.rental_cost).toLocaleString("en-IN")}</td>
+                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+                <td>${actionHtml}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function getStatusClass(status) {
+    switch(status) {
+        case "confirmed": return "success";
+        case "completed": return "success";
+        case "cancelled": return "danger";
+        case "active": return "success";
+        case "pending": return "";
+        default: return "";
+    }
+}
+
+function getStatusLabel(status) {
+    switch(status) {
+        case "confirmed": return "Confirmed";
+        case "completed": return "Completed";
+        case "cancelled": return "Cancelled";
+        case "active": return "Active";
+        case "pending": return "Pending";
+        default: return status;
+    }
+}
+
+function getActionHtml(bookingId, status) {
+    if (status === "pending") {
+        return `<button class="table-action" onclick="confirmBooking(${bookingId})">Confirm</button>`;
+    }
+    if (status === "active") {
+        return `<button class="table-action" onclick="completeBooking(${bookingId})">Complete</button>`;
+    }
+    return "";
+}
+
+async function confirmBooking(bookingId) {
+    if (!confirm("Confirm this booking?")) return;
+
+    try {
+        const response = await fetch("./admin/update-booking.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ booking_id: bookingId, status: "confirmed" })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert("Booking confirmed!");
+            loadBookings();
+        } else {
+            alert("Failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Unable to connect to server.");
+    }
+}
+
+async function completeBooking(bookingId) {
+    if (!confirm("Mark this booking as completed?")) return;
+
+    try {
+        const response = await fetch("./admin/update-booking.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ booking_id: bookingId, status: "completed" })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert("Booking completed!");
+            loadBookings();
+        } else {
+            alert("Failed: " + result.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Unable to connect to server.");
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+// Event listeners
+document.getElementById("statusFilter").addEventListener("change", loadBookings);
+
+// Load bookings on page load
+loadBookings();
+</script>
+</body>
+</html>

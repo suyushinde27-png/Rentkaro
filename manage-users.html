@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Manage Users | RentKaro</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.users-loading { text-align:center; padding:40px; color:#7f7469; }
+</style>
+</head>
+<body>
+<header class="navbar">
+    <a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+    <ul class="nav-links">
+        <li><a href="admin-dashboard.html">Dashboard</a></li>
+        <li><a href="manage-vehicles.html">Vehicles</a></li>
+        <li><a href="manage-bookings.html">Bookings</a></li>
+        <li><a class="active" href="manage-users.html">Users</a></li>
+    </ul>
+    <div class="nav-actions">
+        <a class="login-btn" href="index.html">Website</a>
+    </div>
+</header>
+<main class="page-shell">
+    <h1 class="page-title">Manage Users</h1>
+    <p class="page-lead">Customer accounts and rental activity.</p>
+    <div class="panel" style="margin-bottom:18px">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Search</label>
+                <input id="searchUsers" placeholder="Search by name or email">
+            </div>
+            <div class="form-group">
+                <label>City</label>
+                <select id="filterCity">
+                    <option value="">All Cities</option>
+                    <option value="Mumbai">Mumbai</option>
+                    <option value="Pune">Pune</option>
+                    <option value="Goa">Goa</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>City</th>
+                    <th>Bookings</th>
+                    <th>Reward Points</th>
+                    <th>Account</th>
+                </tr>
+            </thead>
+            <tbody id="usersTableBody">
+                <tr><td colspan="8" class="users-loading">Loading users...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script>
+async function loadUsers() {
+    const tbody = document.getElementById("usersTableBody");
+    tbody.innerHTML = '<tr><td colspan="8" class="users-loading">Loading users...</td></tr>';
+
+    const search = document.getElementById("searchUsers").value.trim();
+    const city = document.getElementById("filterCity").value;
+
+    let url = "./admin/get-users.php";
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (city) params.set("city", city);
+
+    if (params.toString()) url += "?" + params.toString();
+
+    try {
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.success) {
+            displayUsers(result.users);
+        } else {
+            tbody.innerHTML = '<tr><td colspan="8" class="users-empty">Failed to load users.</td></tr>';
+        }
+    } catch (error) {
+        console.error("Error loading users:", error);
+        tbody.innerHTML = '<tr><td colspan="8" class="users-empty">Unable to connect to server.</td></tr>';
+    }
+}
+
+function displayUsers(users) {
+    const tbody = document.getElementById("usersTableBody");
+
+    if (!users || users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="users-empty">No users found.</td></tr>';
+        return;
+    }
+
+    let html = "";
+    users.forEach(user => {
+        const statusClass = user.is_active ? "success" : "danger";
+        const statusLabel = user.is_active ? "Active" : "Suspended";
+
+        html += `
+            <tr>
+                <td>U${String(user.user_id).padStart(3, "0")}</td>
+                <td>${user.name}</td>
+                <td>${user.email}</td>
+                <td>${user.mobile}</td>
+                <td>${user.city || "-"}</td>
+                <td>${user.booking_count || 0}</td>
+                <td>${user.reward_points || 0}</td>
+                <td><span class="badge ${statusClass}">${statusLabel}</span></td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+// Event listeners
+document.getElementById("searchUsers").addEventListener("input", loadUsers);
+document.getElementById("filterCity").addEventListener("change", loadUsers);
+
+// Load users on page load
+loadUsers();
+</script>
+</body>
+</html>

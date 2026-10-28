@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Manage Vehicles | RentKaro</title>
+	<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+	<header class="navbar">
+		<a class="logo" href="index.html"><i class="logo-mark"></i>Rent<span>Karo</span></a>
+		<ul class="nav-links">
+			<li><a href="admin-dashboard.html">Dashboard</a></li>
+			<li><a class="active" href="manage-vehicles.html">Vehicles</a></li>
+			<li><a href="manage-bookings.html">Bookings</a></li>
+			<li><a href="manage-users.html">Users</a></li>
+		</ul>
+		<div class="nav-actions">
+			<a class="login-btn" href="index.html">Website</a>
+		</div>
+	</header>
+	<main class="page-shell">
+		<div class="section-head">
+			<div>
+				<h1 class="page-title">Manage Vehicles</h1>
+				<p class="page-lead">Add, review and maintain the rental fleet.</p>
+			</div>
+			<button class="primary-btn" onclick="showAddModal()">+ Add Vehicle</button>
+		</div>
+		<div class="panel" style="margin-bottom:18px">
+			<div class="form-grid">
+				<div class="form-group">
+					<label>Search</label>
+					<input id="searchVehicles" placeholder="Search by vehicle name">
+				</div>
+				<div class="form-group">
+					<label>Category</label>
+					<select id="filterCategory">
+						<option value="">All</option>
+						<option value="Sedan">Sedan</option>
+						<option value="Hatchback">Hatchback</option>
+						<option value="SUV">SUV</option>
+						<option value="Bike">Bike</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label>Status</label>
+					<select id="filterStatus">
+						<option value="">All</option>
+						<option value="available">Available</option>
+						<option value="booked">Booked</option>
+						<option value="maintenance">Maintenance</option>
+					</select>
+				</div>
+				<div class="form-group" style="display:flex;align-items:flex-end">
+					<button id="searchBtn" class="primary-btn" style="width:100%">Search</button>
+				</div>
+			</div>
+		</div>
+		<div class="table-wrap">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Vehicle</th>
+						<th>Category</th>
+						<th>Transmission</th>
+						<th>Fuel</th>
+						<th>Rate / Day</th>
+						<th>Status</th>
+						<th>Manage</th>
+					</tr>
+				</thead>
+				<tbody id="vehiclesTableBody">
+					<tr><td colspan="8" class="bookings-loading">Loading vehicles...</td></tr>
+				</tbody>
+			</table>
+		</div>
+	</main>
+
+	<!-- Add/Edit Vehicle Modal -->
+	<div id="vehicleModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center;">
+		<div class="panel" style="max-width:500px;width:90%;background:var(--paper)">
+			<h2 id="modalTitle" style="margin-bottom:20px">Add Vehicle</h2>
+			<form id="vehicleForm">
+				<input type="hidden" id="vehicleId">
+				<div class="form-grid">
+					<div class="form-group"><label>Vehicle Name</label><input id="vehicleName" required></div>
+					<div class="form-group"><label>Category</label>
+						<select id="vehicleType" required>
+							<option value="Sedan">Sedan</option>
+							<option value="Hatchback">Hatchback</option>
+							<option value="SUV">SUV</option>
+							<option value="Bike">Bike</option>
+							<option value="Scooter">Scooter</option>
+						</select>
+					</div>
+					<div class="form-group"><label>Seats</label><input id="seats" type="number" min="1" max="20" value="4" required></div>
+					<div class="form-group"><label>Transmission</label>
+						<select id="transmission" required>
+							<option value="Manual">Manual</option>
+							<option value="Automatic">Automatic</option>
+						</select>
+					</div>
+					<div class="form-group"><label>Fuel Type</label>
+						<select id="fuelType" required>
+							<option value="Petrol">Petrol</option>
+							<option value="Diesel">Diesel</option>
+							<option value="Electric">Electric</option>
+						</select>
+					</div>
+					<div class="form-group"><label>Price per Day (₹)</label><input id="pricePerDay" type="number" min="0" step="0.01" required></div>
+					<div class="form-group"><label>Location</label><input id="location" required></div>
+					<div class="form-group"><label>Status</label>
+						<select id="status" required>
+							<option value="available">Available</option>
+							<option value="booked">Booked</option>
+							<option value="maintenance">Maintenance</option>
+						</select>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button class="primary-btn" type="submit">Save Vehicle</button>
+					<button class="secondary-btn" type="button" onclick="closeModal()">Cancel</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script>
+let vehicles = [];
+
+async function loadVehicles() {
+	const tbody = document.getElementById("vehiclesTableBody");
+	tbody.innerHTML = '<tr><td colspan="8" class="bookings-loading">Loading vehicles...</td></tr>';
+
+	const search = document.getElementById("searchVehicles").value.trim();
+	const category = document.getElementById("filterCategory").value;
+	const status = document.getElementById("filterStatus").value;
+
+	let url = "./admin/get-vehicles.php";
+	const params = new URLSearchParams();
+	if (search) params.set("search", search);
+	if (category) params.set("category", category);
+	if (status) params.set("status", status);
+	if (params.toString()) url += "?" + params.toString();
+
+	try {
+		const response = await fetch(url);
+		const result = await response.json();
+
+		if (result.success) {
+			vehicles = result.vehicles;
+			displayVehicles(result.vehicles);
+		} else {
+			tbody.innerHTML = '<tr><td colspan="8" class="bookings-empty">Failed to load vehicles.</td></tr>';
+		}
+	} catch (error) {
+		console.error("Error loading vehicles:", error);
+		tbody.innerHTML = '<tr><td colspan="8" class="bookings-empty">Unable to connect to server.</td></tr>';
+	}
+}
+
+function displayVehicles(vehicles) {
+	const tbody = document.getElementById("vehiclesTableBody");
+
+	if (!vehicles || vehicles.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="8" class="bookings-empty">No vehicles found.</td></tr>';
+		return;
+	}
+
+	let html = "";
+	vehicles.forEach(vehicle => {
+		const statusClass = vehicle.status === "available" ? "success" : (vehicle.status === "booked" ? "" : "danger");
+		const statusLabel = vehicle.status.charAt(0).toUpperCase() + vehicle.status.slice(1);
+
+		html += `
+			<tr>
+				<td>V${String(vehicle.vehicle_id).padStart(3, "0")}</td>
+				<td>${vehicle.vehicle_name}</td>
+				<td>${vehicle.vehicle_type}</td>
+				<td>${vehicle.transmission}</td>
+				<td>${vehicle.fuel_type}</td>
+				<td>₹${Number(vehicle.price_per_day).toLocaleString("en-IN")}</td>
+				<td><span class="badge ${statusClass}">${statusLabel}</span></td>
+				<td class="table-actions">
+					<button class="table-action" onclick="editVehicle(${JSON.stringify(vehicle).replace(/"/g, '&quot;')})">Edit</button>
+					<button class="table-action delete-action" onclick="deleteVehicle(${vehicle.vehicle_id}, '${vehicle.vehicle_name}')">Delete</button>
+				</td>
+			</tr>
+		`;
+	});
+	tbody.innerHTML = html;
+}
+
+function showAddModal() {
+	document.getElementById("modalTitle").textContent = "Add Vehicle";
+	document.getElementById("vehicleForm").reset();
+	document.getElementById("vehicleId").value = "";
+	document.getElementById("vehicleModal").style.display = "flex";
+}
+
+function closeModal() {
+	document.getElementById("vehicleModal").style.display = "none";
+}
+
+async function editVehicle(vehicle) {
+	document.getElementById("modalTitle").textContent = "Edit Vehicle";
+	document.getElementById("vehicleId").value = vehicle.vehicle_id;
+	document.getElementById("vehicleName").value = vehicle.vehicle_name;
+	document.getElementById("vehicleType").value = vehicle.vehicle_type;
+	document.getElementById("seats").value = vehicle.seats;
+	document.getElementById("transmission").value = vehicle.transmission;
+	document.getElementById("fuelType").value = vehicle.fuel_type;
+	document.getElementById("pricePerDay").value = vehicle.price_per_day;
+	document.getElementById("location").value = vehicle.location;
+	document.getElementById("status").value = vehicle.status;
+	document.getElementById("vehicleModal").style.display = "flex";
+}
+
+document.getElementById("vehicleForm").addEventListener("submit", async function(e) {
+	e.preventDefault();
+
+	const vehicleId = document.getElementById("vehicleId").value;
+	const name = document.getElementById("vehicleName").value.trim();
+	const type = document.getElementById("vehicleType").value;
+	const seats = parseInt(document.getElementById("seats").value);
+	const transmission = document.getElementById("transmission").value;
+	const fuel = document.getElementById("fuelType").value;
+	const price = parseFloat(document.getElementById("pricePerDay").value);
+	const location = document.getElementById("location").value.trim();
+	const status = document.getElementById("status").value;
+
+	if (!name || !type || !seats || !transmission || !fuel || !price || !location) {
+		alert("Please fill in all fields.");
+		return;
+	}
+
+	try {
+		const endpoint = vehicleId ? "./admin/update-vehicle.php" : "./admin/add-vehicle.php";
+		const formData = new URLSearchParams({
+			vehicle_name: name,
+			vehicle_type: type,
+			seats: seats,
+			transmission: transmission,
+			fuel_type: fuel,
+			price_per_day: price,
+			location: location,
+			status: status
+		});
+		if (vehicleId) formData.set("vehicle_id", vehicleId);
+
+		const response = await fetch(endpoint, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: formData
+		});
+
+		const result = await response.json();
+
+		if (result.success) {
+			alert(result.message);
+			closeModal();
+			loadVehicles();
+		} else {
+			alert("Failed: " + result.message);
+		}
+	} catch (error) {
+		console.error("Error saving vehicle:", error);
+		alert("Unable to connect to server.");
+	}
+});
+
+async function deleteVehicle(vehicleId, vehicleName) {
+	if (!confirm(`Are you sure you want to delete "${vehicleName}"?`)) return;
+
+	try {
+		const response = await fetch("./admin/delete-vehicle.php", {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: new URLSearchParams({ vehicle_id: vehicleId })
+		});
+
+		const result = await response.json();
+
+		if (result.success) {
+			alert("Vehicle deleted successfully!");
+			loadVehicles();
+		} else {
+			alert("Failed to delete: " + result.message);
+		}
+	} catch (error) {
+		console.error("Error deleting vehicle:", error);
+		alert("Unable to connect to server.");
+	}
+}
+
+// Event listeners
+document.getElementById("searchBtn").addEventListener("click", loadVehicles);
+document.getElementById("filterCategory").addEventListener("change", loadVehicles);
+document.getElementById("filterStatus").addEventListener("change", loadVehicles);
+
+// Load vehicles on page load
+loadVehicles();
+	</script>
+</body>
+</html>
